@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+	<TestRunParameters>
+		<Parameter name="TestURL" value="" />
+		<Parameter name="BetaURL" value="" />
+		<Parameter name="ProductionURL" value="" />
+		<Parameter name="HomePageURL" value="" />
+		<Parameter name="TrussPageURL" value="" />
+		<Parameter name="SetupWizardPageURL" value="" />
+		<Parameter name="DistributorPageURL" value="" />
+		<Parameter name="ColorsPageURL" value="" />
+		<Parameter name="JobPageURL" value="" />
+
+		<Parameter name="GMailPageURL" value="" />
+		<Parameter name="GooglePageURL" value="" />
+		<Parameter name="WikipediaPageURL" value="" />
+		<Parameter name="FacebookPageURL" value="" />
+		<Parameter name="SmartBuildSystemPageURL" value="" />
+		<Parameter name="SmartBuildResourcesPageURL" value="" />
+		<Parameter name="SmartBuildContactPageURL" value="" />
+
+		<Parameter name="Username" value="" />
+		<Parameter name="Password" value="" />
+		<Parameter name="DistributorInfo" value="" />
+		<Parameter name="IdDrawingArea" value="drawingArea" />
+	</TestRunParameters>
+</RunSettings>

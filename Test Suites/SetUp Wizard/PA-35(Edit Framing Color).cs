@@ -1,0 +1,159 @@
+﻿using Forms.Reporting;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using NUnit.Framework;
+using OpenQA.Selenium;
+using SeleniumExtras.WaitHelpers;
+using SmartBuildAutomation.Helper;
+using SmartBuildAutomation.Pages_Application;
+using SmartBuildAutomation.Pages1;
+using SmartBuildProductionAutomation.Helper;
+using System;
+using System.IO;
+
+namespace SmartBuildAutomation
+{
+    [TestFixture, Category("Setup_wizard")]
+    public class EditFramingColor : BaseClass
+    {
+        int p = 3;
+        public string folderPath = FolderPath.Download();
+        [Test]
+        public void FramingColor()
+        {
+            CommonMethod.LoginApplicationAndSetDistributorToAUTOTEST_PHTEST("Edit Framing Color");
+            DefaultColors();
+            GetExcelSheetData();
+            DeleteDataFromFramingTable();
+            CommonMethod.DeleteFolderData();
+        }
+
+        [OneTimeTearDown]
+        public void ExtentClose()
+        {
+            ExtentManager.GetExtent().Flush();
+            CommonMethod.SendEmail("Test Report of Add Framing Color");
+        }
+
+        #region Private Method
+        public void DefaultColors()
+        {
+            HomePage.NavigateToSetupWizardPages();
+            SetupWizard.ClickFraming();
+            DeleteDataFromFramingTable();
+            string[] sku = new string[6] { "DefaultColorData", "YellowPineColorData", "SpruceValueColorData", "TreatedLumberColorData", "RedIronColorData", "GrayIronColorData" };
+            string[] colorData = new string[6] { "(default)", "Yellow Pine", "Spruce", "Engineered Lumber", "Treated Lumber", "Red Iron" };
+            for (int i = 0; i < colorData.Length; i++)
+            {
+                SetupWizard.ClickAddButton();
+                SetupWizard.EnterSKUInputField(sku[i]);
+                SetupWizard.EnterDescriptionInputField(sku[i]);
+                SetupWizard.EnterWidthInputField("3.5");
+                SetupWizard.EnterDepthInputField("13");
+                CommonMethod.Wait(1);
+                SetupWizard.SelectColor(colorData[i]);
+                CommonMethod.Wait(1);
+                SetupWizard.SelectProfile("Cee");
+                SetupWizard.SelectAllElementFromUsageTable();
+                SetupWizard.EnterPricingDetails("5", "6");
+                SetupWizard.ClickAddButtonOfPricingTable();
+                CommonMethod.Wait(1);
+                PartLengthForSheathing();
+                SetupWizard.ClickSaveButton();
+            }
+
+            SetupWizard.SaveDataInTheSetupWizard();
+            HomePage.NavigateToSetupWizardPages();
+            SetupWizard.ClickFraming();
+        }
+
+        private void GetExcelSheetData()
+        {
+            SetupWizard.DownloadTheExcelFile();
+
+            string excelFileName = "SetupWizard-Framing.xlsx";
+            string downloadExcelFile = Path.Combine(folderPath, excelFileName);
+            FolderPath.WaitForFileDownload(downloadExcelFile, 60);
+
+            string[] sku1 = new string[6] { "DefaultColorData{LF}", "YellowPineColorData{LF}", "SpruceValueColorData{LF}", "TreatedLumberColorData{LF}", "RedIronColorData{LF}", "GrayIronColorData{LF}" };
+            string[] colorData = new string[6] { "", "YellowPine", "Spruce", "EngineeredLumber", "TreatedLumber", "RedIron" };
+
+            using (FileStream file = new FileStream(downloadExcelFile, FileMode.Open, FileAccess.Read))
+            {
+                XSSFWorkbook Workbook = new XSSFWorkbook(file);
+                var sheet = Workbook.GetSheetAt(0);
+
+                if (sheet != null)
+                {
+                    int LastRowNumber = sheet.LastRowNum;
+
+                    for (int i = 0; i < sku1.Length; i++)
+                    {
+                        bool skuFound = false;
+
+                        for (int k = 0; k <= LastRowNumber; k++)
+                        {
+                            IRow currentRow = sheet.GetRow(k);
+                            var skuCell = currentRow?.GetCell(0);
+
+                            if (skuCell != null && skuCell.ToString().Contains(sku1[i]))
+                            {
+                                var colorCell = currentRow.GetCell(11);
+                                if (colorCell != null && colorCell.ToString() == colorData[i])
+                                {
+                                    Console.WriteLine($"SKU: {sku1[i]}, Color: {colorData[i]}");
+
+                                    for (int col = 0; col <= 21; col++)
+                                    {
+                                        var value = currentRow.GetCell(col);
+                                        Console.WriteLine($"Column {col + 1}: {value}");
+                                    }
+
+                                    Console.WriteLine();
+                                    skuFound = true;
+                                }
+
+                                break;
+                            }
+                        }
+
+                        Assert.IsTrue(skuFound, $"SKU '{sku1[i]}' not found in the Excel sheet.");
+                        ExtentTestManager.TestSteps("Verify that Added Colors are shown in the XLSX file");
+                    }
+                }
+            }
+        }
+
+        private void DeleteDataFromFramingTable()
+        {
+            string[] sku = new string[6] { "DefaultColorData", "YellowPineColorData", "SpruceValueColorData", "TreatedLumberColorData", "RedIronColorData", "GrayIronColorData" };
+            for (int i = 0; i < sku.Length; i++)
+            {
+                SetupWizard.DeleteSetupWizardData(sku[i]);
+            }
+
+            if (SetupWizard.SaveAllButton().Enabled)
+            {
+                SetupWizard.SaveDataInTheSetupWizard();
+                HomePage.NavigateToSetupWizardPages();
+                SetupWizard.ClickFraming();
+            }
+        }
+        private void PartLengthForSheathing()
+        {
+            // Enter value in the Part Length 
+            string[] partLength = new string[2] { "12", "14" };
+            for (int l = 0; l < partLength.Length; l++)
+            {
+                CommonMethod.element = GetWebDriverWait().Until(ExpectedConditions.ElementToBeClickable(By.XPath("//div[@id='grid_pricingsGrid_records']/table/tbody/tr[" + p + "]/td[1]")));
+                CommonMethod.GetActions().MoveToElement(CommonMethod.element).DoubleClick().KeyDown(Keys.Control).SendKeys("a").KeyUp(Keys.Control).SendKeys(partLength[l]).Perform();
+                GetWebDriverWait().Until(ExpectedConditions.ElementToBeClickable(By.XPath("//label[contains(text(),'Pricings')]"))).Click();
+                CommonMethod.Wait(1);
+                p++;
+            }
+            p = 3;
+            ExtentTestManager.TestSteps("Enter value in the Part Length ");
+        }
+    }
+}
+#endregion
